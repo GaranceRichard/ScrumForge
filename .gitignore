@@ -1,0 +1,41 @@
+# 📌 GitHub documentation reference
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+
+# 🛑 Node.js/React ignores
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+dist/
+build/
+*.log
+
+# 🛑 Django/Python ignores
+venv/
+*.pyc
+*.pyo
+__pycache__/
+migrations/__pycache__/
+db.sqlite3
+*.sqlite3
+logs/
+debug.log
+
+# 🛑 Fichiers sensibles & Secrets
+.env
+.env.*
+!.env.example  # ✅ Garde un modèle d'ENV
+
+# 🛑 IDE/Éditeur ignores
+.vscode/
+.idea/
+*.swp
+
+# 🛑 Docker (si utilisé)
+docker-compose.override.yml
+docker-compose.yml
+
+# 🛑 Système (Windows/Mac)
+.DS_Store
+Thumbs.db
