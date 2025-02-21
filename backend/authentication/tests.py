@@ -76,3 +76,43 @@ class AuthenticationTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)  # Accès refusé sans token
         self.assertIn("detail", response.data)  # Vérifie que Django renvoie un message d'erreur
         self.assertEqual(response.data["detail"], "Authentication credentials were not provided.")  # Vérifie le message d'erreur exact
+
+    def test_logout_success(self):
+        """Vérifie qu'un utilisateur peut se déconnecter et que son refresh token est blacklisté"""
+        refresh = RefreshToken.for_user(self.user)
+        refresh_token = str(refresh)
+        access_token = str(refresh.access_token)
+
+        # Ajouter le token d'authentification dans les headers
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {access_token}")
+
+        # Envoyer la requête de logout
+        response = self.client.post("/authentication/logout/", {"refresh": refresh_token}, format="json")
+
+        # Vérifier que la requête a bien été traitée
+        self.assertEqual(response.status_code, status.HTTP_205_RESET_CONTENT)
+        self.assertEqual(response.data["message"], "Déconnexion réussie.")
+
+        # Vérifier que le refresh token est maintenant invalide
+        response = self.client.post("/authentication/token/refresh/", {"refresh": refresh_token}, format="json")
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertIn("detail", response.data)
+        self.assertEqual(response.data["detail"], "Token is blacklisted")
+
+
+    def test_logout_invalid_token(self):
+        """Vérifie qu'un utilisateur ne peut PAS se déconnecter avec un refresh token invalide"""
+        invalid_refresh_token = "invalid_token_string"
+
+        # Ajouter le token d'authentification dans les headers
+        refresh = RefreshToken.for_user(self.user)
+        access_token = str(refresh.access_token)
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {access_token}")
+
+        # Envoyer une requête de logout avec un refresh token invalide
+        response = self.client.post("/authentication/logout/", {"refresh": invalid_refresh_token}, format="json")
+
+        # Vérifier que la requête est refusée avec une erreur 400
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("error", response.data)
+        self.assertEqual(response.data["error"], "Token invalide ou déjà expiré.")
