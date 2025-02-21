@@ -1,8 +1,12 @@
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import User
+from django.test.utils import override_settings
 from rest_framework.test import APITestCase
 from rest_framework import status
 from rest_framework_simplejwt.tokens import RefreshToken
+
+
+User = get_user_model()
 
 class AuthenticationTests(APITestCase):
 
@@ -100,7 +104,6 @@ class AuthenticationTests(APITestCase):
         self.assertIn("detail", response.data)
         self.assertEqual(response.data["detail"], "Token is blacklisted")
 
-
     def test_logout_invalid_token(self):
         """Vérifie qu'un utilisateur ne peut PAS se déconnecter avec un refresh token invalide"""
         invalid_refresh_token = "invalid_token_string"
@@ -117,8 +120,6 @@ class AuthenticationTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn("error", response.data)
         self.assertEqual(response.data["error"], "Token invalide ou déjà expiré.")
-
-User = get_user_model()
 
 class RegisterTests(APITestCase):
     def setUp(self):
@@ -185,3 +186,47 @@ class RegisterTests(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn("email", response.data)
+        
+       
+class ResetPasswordTests(APITestCase):
+    def setUp(self):
+        """Créer un utilisateur test"""
+        self.user = User.objects.create_user(username="testuser", email="test@example.com", password="password123")
+        self.reset_password_url = "/authentication/reset-password/"
+
+    @override_settings(DEBUG=True)
+    def test_reset_password_debug_mode(self):
+        """✅ Vérifie qu'en mode DEBUG, le mot de passe est retourné dans la réponse"""
+        response = self.client.post(self.reset_password_url, {"email": "test@example.com"}, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn("message", response.data)
+        self.assertIn("username", response.data)
+        self.assertIn("new_password", response.data)  # 🔹 Vérifie que le mot de passe est inclus
+        self.assertEqual(response.data["username"], "testuser")
+
+    @override_settings(DEBUG=False)
+    def test_reset_password_production_mode(self):
+        """✅ Vérifie qu'en mode production, le mot de passe n'est PAS retourné"""
+        response = self.client.post(self.reset_password_url, {"email": "test@example.com"}, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn("message", response.data)
+        self.assertIn("username", response.data)
+        self.assertNotIn("new_password", response.data)  # 🔹 Vérifie que le mot de passe n'est PAS inclus
+
+    def test_reset_password_fail_email_not_found(self):
+        """❌ Vérifie que l'API retourne une erreur 404 si l'email n'existe pas"""
+        response = self.client.post(self.reset_password_url, {"email": "unknown@example.com"}, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertIn("error", response.data)
+        self.assertEqual(response.data["error"], "Aucun utilisateur trouvé avec cet email.")
+
+    def test_reset_password_fail_missing_email(self):
+        """❌ Vérifie que l'API retourne une erreur 400 si aucun email n'est fourni"""
+        response = self.client.post(self.reset_password_url, {}, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("error", response.data)
+        self.assertEqual(response.data["error"], "L'email est requis.")
