@@ -1,3 +1,4 @@
-from django.shortcuts import render
+from django.http import JsonResponse
 
-# Create your views here.
+def certification_list(request):
+    return JsonResponse({"message": "Liste des certifications"})
