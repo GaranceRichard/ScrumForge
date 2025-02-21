@@ -1,3 +1,4 @@
+from django.contrib.auth import get_user_model
 from django.contrib.auth.models import User
 from rest_framework.test import APITestCase
 from rest_framework import status
@@ -116,3 +117,71 @@ class AuthenticationTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn("error", response.data)
         self.assertEqual(response.data["error"], "Token invalide ou déjà expiré.")
+
+User = get_user_model()
+
+class RegisterTests(APITestCase):
+    def setUp(self):
+        """Créer un utilisateur existant pour tester les erreurs de duplication"""
+        self.existing_user = User.objects.create_user(username="existinguser", email="existing@example.com", password="password123")
+        self.register_url = "/authentication/register/"
+
+    def test_register_success(self):
+        """Test d'inscription réussie"""
+        data = {
+            "username": "newuser",
+            "email": "newuser@example.com",
+            "password": "SecurePass123!"
+        }
+        response = self.client.post(self.register_url, data, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertIn("username", response.data)
+        self.assertEqual(response.data["username"], "newuser")
+
+    def test_register_fail_missing_email(self):
+        """Échec de l'inscription si l'email est manquant"""
+        data = {
+            "username": "userwithoutemail",
+            "password": "SecurePass123!"
+        }
+        response = self.client.post(self.register_url, data, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("email", response.data)
+
+    def test_register_fail_short_password(self):
+        """Échec de l'inscription si le mot de passe est trop court"""
+        data = {
+            "username": "userwithshortpass",
+            "email": "shortpass@example.com",
+            "password": "123"
+        }
+        response = self.client.post(self.register_url, data, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("password", response.data)
+
+    def test_register_fail_username_already_taken(self):
+        """Échec de l'inscription si le username est déjà utilisé"""
+        data = {
+            "username": "existinguser",
+            "email": "newmail@example.com",
+            "password": "SecurePass123!"
+        }
+        response = self.client.post(self.register_url, data, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("username", response.data)
+
+    def test_register_fail_email_already_taken(self):
+        """Échec de l'inscription si l'email est déjà utilisé"""
+        data = {
+            "username": "newuser2",
+            "email": "existing@example.com",
+            "password": "SecurePass123!"
+        }
+        response = self.client.post(self.register_url, data, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("email", response.data)
