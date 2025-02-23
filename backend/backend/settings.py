@@ -10,15 +10,21 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 from datetime import timedelta
+from dotenv import load_dotenv
 from pathlib import Path
 import os
 
-
+load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', 'changemoi')
 LOGIN_URL = '/authentication/token/'  # JWT remplace le login classique
+
+SECRET_KEY = os.getenv('DJANGO_SECRET_KEY')
+
+if not SECRET_KEY:
+    raise ValueError("❌ SECRET_KEY est manquante dans .env ! Ajoutez-la pour sécuriser votre projet.")
+
 
 
 # Quick-start development settings - unsuitable for production
@@ -27,7 +33,7 @@ LOGIN_URL = '/authentication/token/'  # JWT remplace le login classique
 # SECURITY WARNING: keep the secret key used in production secret!
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.getenv('DJANGO_DEBUG', 'True') == 'True'
 
 ALLOWED_HOSTS = []
 
@@ -61,6 +67,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'corsheaders.middleware.CorsMiddleware',
+    'middleware.CustomExceptionMiddleware',  # Gestionnaire d’erreurs API
 ]
 
 ROOT_URLCONF = 'backend.urls'

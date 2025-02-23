@@ -21,19 +21,24 @@ def home_api(request):
 
 
 class LogoutView(APIView):
-    """Gère la déconnexion en invalidant le refresh token"""
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
         try:
-            refresh_token = request.data["refresh"]
+            refresh_token = request.data.get("refresh")
+            if not refresh_token:
+                return Response({"error": "Le token de déconnexion est requis."}, status=status.HTTP_400_BAD_REQUEST)
+
             token = RefreshToken(refresh_token)
-            token.blacklist()  # Blacklist le token pour empêcher son utilisation future
+            token.blacklist()
 
             return Response({"message": "Déconnexion réussie."}, status=status.HTTP_205_RESET_CONTENT)
 
-        except Exception as e:
-            return Response({"error": "Token invalide ou déjà expiré."}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception:
+            return Response(
+                {"error": "Token invalide ou déjà expiré."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
 class RegisterView(generics.CreateAPIView):
     queryset = User.objects.all()
@@ -46,28 +51,30 @@ class ResetPasswordView(APIView):
         email = request.data.get("email")
         if not email:
             return Response({"error": "L'email est requis."}, status=status.HTTP_400_BAD_REQUEST)
+
         try:
             user = User.objects.get(email=email)
         except User.DoesNotExist:
             return Response({"error": "Aucun utilisateur trouvé avec cet email."}, status=status.HTTP_404_NOT_FOUND)
-        new_password = get_random_string(length=12)  # Générer un mot de passe aléatoire
+
+        new_password = get_random_string(length=12)
         user.set_password(new_password)
         user.save()
-        # Envoyer un email simulé ou réel selon l'environnement
+
         send_mail(
             subject="Réinitialisation de votre mot de passe",
-            message=f"Bonjour {user.username},\n\nVotre nouveau mot de passe est : {new_password}\n\nVeuillez le modifier après connexion.",
+            message=f"Bonjour {user.username}, votre nouveau mot de passe est : {new_password}",
             from_email="no-reply@scrumforge.com",
             recipient_list=[user.email],
             fail_silently=False,
         )
-        # Construire la réponse JSON
+
         response_data = {
-            "message": "Un nouveau mot de passe a été envoyé à votre adresse email.",
+            "message": "Un nouveau mot de passe a été envoyé.",
             "username": user.username
         }
-        # 🔹 Si on est en mode DEBUG, on inclut le mot de passe dans la réponse
-        if settings.DEBUG:
+
+        if settings.DEBUG:  # 🔥 Vérifie bien que DEBUG=True
             response_data["new_password"] = new_password
 
         return Response(response_data, status=status.HTTP_200_OK)
