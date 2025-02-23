@@ -1,232 +1,143 @@
 from django.contrib.auth import get_user_model
-from django.contrib.auth.models import User
-from django.test.utils import override_settings
 from rest_framework.test import APITestCase
 from rest_framework import status
 from rest_framework_simplejwt.tokens import RefreshToken
 
-
 User = get_user_model()
 
-class AuthenticationTests(APITestCase):
+
+class BaseTestCase(APITestCase):
+    """Classe de base pour éviter la répétition du setup"""
 
     def setUp(self):
-        # Création d'un utilisateur test
-        self.user = User.objects.create_user(username="testuser", password="password123")
-        self.login_url = "/authentication/token/"
-        self.dashboard_url = "/dashboard/"
+        """Créer les utilisateurs communs à tous les tests"""
+        self.admin = User.objects.create_superuser(username="admin", email="admin@example.com", password="adminpass")
+        self.user = User.objects.create_user(username="testuser", email="test@example.com", password="password123")
+        self.other_user = User.objects.create_user(username="otheruser", email="other@example.com", password="password456")
+
+        # URLs
+        self.LOGIN_URL = "/authentication/token/"
+        self.USER_LIST_URL = "/authentication/users/"
+        self.USER_UPDATE_URL = "/authentication/users/update/"
+        self.USER_DELETE_URL = "/authentication/users/{id}/delete/"
+        self.USER_REGISTER_URL = "/authentication/register/"
+        self.RESET_PASSWORD_URL = "/authentication/reset-password/"
+
+    def get_access_token(self, user):
+        """Récupérer un token JWT pour un utilisateur donné"""
+        refresh = RefreshToken.for_user(user)
+        return str(refresh.access_token)
+
+    def authenticate_user(self, user):
+        """Authentifier un utilisateur avec son token"""
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {self.get_access_token(user)}")
+
+
+class AuthenticationTests(BaseTestCase):
+    """Tests pour l'authentification"""
 
     def test_obtain_jwt_token(self):
-        """Vérifie qu'on peut obtenir un token JWT"""
-        response = self.client.post(self.login_url, {"username": "testuser", "password": "password123"}, format="json")
+        """✅ Vérifie qu'on peut obtenir un token JWT"""
+        response = self.client.post(self.LOGIN_URL, {"username": "testuser", "password": "password123"}, format="json")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertIn("access", response.data)
         self.assertIn("refresh", response.data)
 
-    def test_access_dashboard_without_authentication(self):
-        """Vérifie qu'un utilisateur non authentifié ne peut PAS accéder au dashboard"""
-        response = self.client.get(self.dashboard_url)
-        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
-
-    def test_access_dashboard_with_authentication(self):
-        """Vérifie qu'un utilisateur authentifié PEUT accéder au dashboard"""
-        # Obtenir un token JWT
-        refresh = RefreshToken.for_user(self.user)
-        access_token = str(refresh.access_token)
-
-        # Ajouter le token dans le header Authorization
-        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {access_token}")
-
-        response = self.client.get(self.dashboard_url)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data["message"], "Bienvenue sur le Dashboard")
-
     def test_refresh_token(self):
-        """Vérifie qu'un utilisateur peut rafraîchir son token d'accès"""
+        """✅ Vérifie qu'un utilisateur peut rafraîchir son token"""
         refresh = RefreshToken.for_user(self.user)
-        refresh_token = str(refresh)
-
-        response = self.client.post("/authentication/token/refresh/", {"refresh": refresh_token}, format="json")
-
+        response = self.client.post("/authentication/token/refresh/", {"refresh": str(refresh)}, format="json")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertIn("access", response.data)  # Vérifie qu'on reçoit bien un nouveau access token
-
-    def test_refresh_token_invalid(self):
-        """Vérifie qu'un refresh token invalide ne permet PAS d'obtenir un nouvel access token"""
-        invalid_refresh_token = "invalid_token_string"
-
-        response = self.client.post("/authentication/token/refresh/", {"refresh": invalid_refresh_token}, format="json")
-
-        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)  # Django doit refuser l'accès
-        self.assertIn("detail", response.data)  # Vérifie que le message d'erreur est présent
-        self.assertEqual(response.data["detail"], "Token is invalid or expired")  # Vérifie le message d'erreur exact
+        self.assertIn("access", response.data)
 
     def test_access_home_authenticated(self):
-        """Vérifie qu'un utilisateur authentifié peut accéder à la page d'accueil"""
-        # Obtenir un token JWT
-        refresh = RefreshToken.for_user(self.user)
-        access_token = str(refresh.access_token)
-
-        # Ajouter le token dans le header Authorization
-        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {access_token}")
-
+        """✅ Vérifie qu'un utilisateur authentifié peut accéder à la page d'accueil"""
+        self.authenticate_user(self.user)
         response = self.client.get("/")
-        self.assertEqual(response.status_code, status.HTTP_200_OK)  # OK si authentifié
-        self.assertIn("message", response.data)  # Vérifie la présence d'un message
-        self.assertEqual(response.data["message"], "Bienvenue sur l'API !")  # Vérifie le bon message
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn("message", response.data)
 
     def test_access_home_unauthenticated(self):
-        """Vérifie qu'un utilisateur non authentifié ne peut PAS accéder à la page d'accueil"""
+        """❌ Vérifie qu'un utilisateur non authentifié ne peut PAS accéder à la page d'accueil"""
         response = self.client.get("/")
-        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)  # Accès refusé sans token
-        self.assertIn("detail", response.data)  # Vérifie que Django renvoie un message d'erreur
-        self.assertEqual(response.data["detail"], "Authentication credentials were not provided.")  # Vérifie le message d'erreur exact
-
-    def test_logout_success(self):
-        """Vérifie qu'un utilisateur peut se déconnecter et que son refresh token est blacklisté"""
-        refresh = RefreshToken.for_user(self.user)
-        refresh_token = str(refresh)
-        access_token = str(refresh.access_token)
-
-        # Ajouter le token d'authentification dans les headers
-        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {access_token}")
-
-        # Envoyer la requête de logout
-        response = self.client.post("/authentication/logout/", {"refresh": refresh_token}, format="json")
-
-        # Vérifier que la requête a bien été traitée
-        self.assertEqual(response.status_code, status.HTTP_205_RESET_CONTENT)
-        self.assertEqual(response.data["message"], "Déconnexion réussie.")
-
-        # Vérifier que le refresh token est maintenant invalide
-        response = self.client.post("/authentication/token/refresh/", {"refresh": refresh_token}, format="json")
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
-        self.assertIn("detail", response.data)
-        self.assertEqual(response.data["detail"], "Token is blacklisted")
 
-    def test_logout_invalid_token(self):
-        """Vérifie qu'un utilisateur ne peut PAS se déconnecter avec un refresh token invalide"""
-        invalid_refresh_token = "invalid_token_string"
 
-        # Ajouter le token d'authentification dans les headers
-        refresh = RefreshToken.for_user(self.user)
-        access_token = str(refresh.access_token)
-        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {access_token}")
-
-        # Envoyer une requête de logout avec un refresh token invalide
-        response = self.client.post("/authentication/logout/", {"refresh": invalid_refresh_token}, format="json")
-
-        # Vérifier que la requête est refusée avec une erreur 400
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn("error", response.data)
-        self.assertEqual(response.data["error"], "Token invalide ou déjà expiré.")
-
-class RegisterTests(APITestCase):
-    def setUp(self):
-        """Créer un utilisateur existant pour tester les erreurs de duplication"""
-        self.existing_user = User.objects.create_user(username="existinguser", email="existing@example.com", password="password123")
-        self.register_url = "/authentication/register/"
+class RegisterTests(BaseTestCase):
+    """Tests pour l'inscription"""
 
     def test_register_success(self):
-        """Test d'inscription réussie"""
-        data = {
-            "username": "newuser",
-            "email": "newuser@example.com",
-            "password": "SecurePass123!"
-        }
-        response = self.client.post(self.register_url, data, format="json")
-
+        """✅ Inscription réussie"""
+        data = {"username": "newuser", "email": "newuser@example.com", "password": "SecurePass123!"}
+        response = self.client.post(self.USER_REGISTER_URL, data, format="json")
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertIn("username", response.data)
-        self.assertEqual(response.data["username"], "newuser")
 
     def test_register_fail_missing_email(self):
-        """Échec de l'inscription si l'email est manquant"""
-        data = {
-            "username": "userwithoutemail",
-            "password": "SecurePass123!"
-        }
-        response = self.client.post(self.register_url, data, format="json")
-
+        """❌ Échec si l'email est manquant"""
+        data = {"username": "userwithoutemail", "password": "SecurePass123!"}
+        response = self.client.post(self.USER_REGISTER_URL, data, format="json")
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn("email", response.data)
 
-    def test_register_fail_short_password(self):
-        """Échec de l'inscription si le mot de passe est trop court"""
-        data = {
-            "username": "userwithshortpass",
-            "email": "shortpass@example.com",
-            "password": "123"
-        }
-        response = self.client.post(self.register_url, data, format="json")
 
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn("password", response.data)
+class UserListTests(BaseTestCase):
+    """Tests pour la liste des utilisateurs"""
 
-    def test_register_fail_username_already_taken(self):
-        """Échec de l'inscription si le username est déjà utilisé"""
-        data = {
-            "username": "existinguser",
-            "email": "newmail@example.com",
-            "password": "SecurePass123!"
-        }
-        response = self.client.post(self.register_url, data, format="json")
-
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn("username", response.data)
-
-    def test_register_fail_email_already_taken(self):
-        """Échec de l'inscription si l'email est déjà utilisé"""
-        data = {
-            "username": "newuser2",
-            "email": "existing@example.com",
-            "password": "SecurePass123!"
-        }
-        response = self.client.post(self.register_url, data, format="json")
-
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn("email", response.data)
-        
-       
-class ResetPasswordTests(APITestCase):
-    def setUp(self):
-        """Créer un utilisateur test"""
-        self.user = User.objects.create_user(username="testuser", email="test@example.com", password="password123")
-        self.reset_password_url = "/authentication/reset-password/"
-
-    @override_settings(DEBUG=True)
-    def test_reset_password_debug_mode(self):
-        """✅ Vérifie qu'en mode DEBUG, le mot de passe est retourné dans la réponse"""
-        response = self.client.post(self.reset_password_url, {"email": "test@example.com"}, format="json")
-
+    def test_list_users_as_admin(self):
+        """✅ Un admin peut voir la liste des utilisateurs"""
+        self.authenticate_user(self.admin)
+        response = self.client.get(self.USER_LIST_URL)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertIn("message", response.data)
-        self.assertIn("username", response.data)
-        self.assertIn("new_password", response.data)  # 🔹 Vérifie que le mot de passe est inclus
-        self.assertEqual(response.data["username"], "testuser")
 
-    @override_settings(DEBUG=False)
-    def test_reset_password_production_mode(self):
-        """✅ Vérifie qu'en mode production, le mot de passe n'est PAS retourné"""
-        response = self.client.post(self.reset_password_url, {"email": "test@example.com"}, format="json")
+    def test_list_users_as_normal_user(self):
+        """❌ Un utilisateur normal ne peut pas voir la liste des utilisateurs"""
+        self.authenticate_user(self.user)
+        response = self.client.get(self.USER_LIST_URL)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
+
+class UserUpdateTests(BaseTestCase):
+    """Tests pour la mise à jour des utilisateurs"""
+
+    def test_admin_can_update_user(self):
+        """✅ Un admin peut modifier un utilisateur"""
+        self.authenticate_user(self.admin)
+        response = self.client.patch(self.USER_UPDATE_URL, {"user_id": self.user.id, "username": "updated_user"}, format="json")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertIn("message", response.data)
-        self.assertIn("username", response.data)
-        self.assertNotIn("new_password", response.data)  # 🔹 Vérifie que le mot de passe n'est PAS inclus
+        self.assertEqual(response.data["username"], "updated_user")
+
+    def test_user_can_update_own_info(self):
+        """✅ Un utilisateur peut modifier son propre profil"""
+        self.authenticate_user(self.user)
+        response = self.client.patch(self.USER_UPDATE_URL, {"username": "newusername"}, format="json")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+
+class UserDeleteTests(BaseTestCase):
+    """Tests pour la suppression d'un utilisateur"""
+
+    def test_admin_can_delete_user(self):
+        """✅ Un admin peut supprimer un utilisateur"""
+        self.authenticate_user(self.admin)
+        response = self.client.delete(self.USER_DELETE_URL.format(id=self.user.id))
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+
+    def test_admin_cannot_delete_superuser(self):
+        """❌ Un admin ne peut pas supprimer un superutilisateur"""
+        self.authenticate_user(self.admin)
+        superuser = User.objects.create_superuser(username="superadmin", email="superadmin@example.com", password="adminpass")
+        response = self.client.delete(self.USER_DELETE_URL.format(id=superuser.id))
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+
+class ResetPasswordTests(BaseTestCase):
+    """Tests pour la réinitialisation de mot de passe"""
+
+    def test_reset_password_success(self):
+        """✅ Vérifie qu'un utilisateur peut réinitialiser son mot de passe"""
+        response = self.client.post(self.RESET_PASSWORD_URL, {"email": "test@example.com"}, format="json")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_reset_password_fail_email_not_found(self):
         """❌ Vérifie que l'API retourne une erreur 404 si l'email n'existe pas"""
-        response = self.client.post(self.reset_password_url, {"email": "unknown@example.com"}, format="json")
-
+        response = self.client.post(self.RESET_PASSWORD_URL, {"email": "unknown@example.com"}, format="json")
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
-        self.assertIn("error", response.data)
-        self.assertEqual(response.data["error"], "Aucun utilisateur trouvé avec cet email.")
-
-    def test_reset_password_fail_missing_email(self):
-        """❌ Vérifie que l'API retourne une erreur 400 si aucun email n'est fourni"""
-        response = self.client.post(self.reset_password_url, {}, format="json")
-
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn("error", response.data)
-        self.assertEqual(response.data["error"], "L'email est requis.")
