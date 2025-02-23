@@ -1,11 +1,13 @@
 # ScrumForge
+Le projet ScrumForge vise à proposer un espace pour chaque inscrit où il puisse travailler ses compétences sur les certifications Scrum.org et progressivement, à force de travail et d'exercice, se trouver en position de pouvoir les passer en toute sécurité.
 
-# 📌 Authentication API
+# Backend
+## 📌 Authentication API
 
-## 🚀 Présentation
+### 🚀 Présentation
 L'API **Authentication** est un service développé avec **Django Rest Framework (DRF)** qui gère l'authentification et la gestion des utilisateurs. Elle permet l'inscription, la connexion, la mise à jour et la suppression des utilisateurs avec un système sécurisé basé sur des tokens d'authentification.
 
-## 🏗 Architecture de l'API
+### 🏗 Architecture de l'API
 L'API repose sur les composants suivants :
 
 - **Django Rest Framework (DRF)** : gestion des endpoints et des permissions.
@@ -14,7 +16,7 @@ L'API repose sur les composants suivants :
 - **Django User Model** : gestion des utilisateurs.
 - **Serializers** : conversion des objets en JSON.
 
-## 📁 Structure du projet
+### 📁 Structure du projet
 ```
 /authentication
 │── /migrations               # Migrations de la base de données
@@ -29,10 +31,10 @@ L'API repose sur les composants suivants :
 │── wsgi.py / asgi.py         # Serveur d’application
 ```
 
-## 🛠 Endpoints de l'API
+### 🛠 Endpoints de l'API
 Tous les endpoints sont accessibles via `/api/auth/`
 
-### 🔹 1. Inscription
+#### 🔹 1. Inscription
 - **Méthode** : `POST`
 - **URL** : `/api/auth/register/`
 - **Corps de la requête** :
@@ -53,7 +55,7 @@ Tous les endpoints sont accessibles via `/api/auth/`
 }
 ```
 
-### 🔹 2. Connexion
+#### 🔹 2. Connexion
 - **Méthode** : `POST`
 - **URL** : `/api/auth/login/`
 - **Corps de la requête** :
@@ -71,32 +73,32 @@ Tous les endpoints sont accessibles via `/api/auth/`
 }
 ```
 
-### 🔹 3. Rafraîchir le Token JWT
+#### 🔹 3. Rafraîchir le Token JWT
 - **Méthode** : `POST`
 - **URL** : `/api/auth/refresh/`
 
-### 🔹 4. Déconnexion
+#### 🔹 4. Déconnexion
 - **Méthode** : `POST`
 - **URL** : `/api/auth/logout/`
 
-### 🔹 5. Profil utilisateur
+#### 🔹 5. Profil utilisateur
 - **Méthode** : `GET`
 - **URL** : `/api/auth/me/`
 
-### 🔹 6. Mise à jour du profil
+#### 🔹 6. Mise à jour du profil
 - **Méthode** : `PUT`
 - **URL** : `/api/auth/update/`
 
-### 🔹 7. Suppression du compte
+#### 🔹 7. Suppression du compte
 - **Méthode** : `DELETE`
 - **URL** : `/api/auth/delete/`
 
-## 🔐 Sécurité
+### 🔐 Sécurité
 - Utilisation de **JWT** pour l'authentification.
 - L’**access token** est utilisé pour accéder aux endpoints sécurisés.
 - Le **refresh token** permet de renouveler l’access token.
 
-## 📦 Installation et exécution
+### 📦 Installation et exécution
 1. **Cloner le projet**
 ```bash
 git clone https://github.com/votre-repo/auth-api.git
@@ -127,13 +129,13 @@ python manage.py runserver
 
 L'API sera accessible à `http://127.0.0.1:8000/api/auth/`.
 
-## 🛠 Technologies utilisées
+### 🛠 Technologies utilisées
 - Python 3.x
 - Django & Django Rest Framework
 - PostgreSQL / SQLite
 - JWT pour l'authentification
 
-## 📌 À venir
+### 📌 À venir
 ✅ Implémentation des rôles et permissions avancées  
 ✅ Gestion des mots de passe oubliés  
 ✅ Support OAuth (Google, GitHub, etc.)  
