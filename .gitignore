@@ -39,3 +39,7 @@ docker-compose.yml
 # 🛑 Système (Windows/Mac)
 .DS_Store
 Thumbs.db
+backend/seed.py
+backend/.env
+db.sqlite3
+
