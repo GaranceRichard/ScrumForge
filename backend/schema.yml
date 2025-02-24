@@ -1,0 +1,446 @@
+openapi: 3.0.3
+info:
+  title: ScrumForge API
+  version: 1.0.0
+  description: Documentation des endpoints de l'API ScrumForge
+paths:
+  /:
+    get:
+      operationId: root_retrieve
+      description: Retourne un message de bienvenue et le nom de l'utilisateur connecté
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Home'
+          description: ''
+  /authentication/logout/:
+    post:
+      operationId: authentication_logout_create
+      description: Déconnexion d'un utilisateur en blacklistant son refresh token
+      tags:
+      - authentication
+      security:
+      - jwtAuth: []
+      responses:
+        '205':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Logout'
+          description: ''
+  /authentication/register/:
+    post:
+      operationId: authentication_register_create
+      description: Inscription d'un nouvel utilisateur
+      tags:
+      - authentication
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/User'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/User'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/User'
+        required: true
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: ''
+  /authentication/reset-password/:
+    post:
+      operationId: authentication_reset_password_create
+      description: Génération d'un nouveau mot de passe pour un utilisateur
+      tags:
+      - authentication
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ResetPassword'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ResetPassword'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ResetPassword'
+        required: true
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResetPasswordResponse'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                error: Aucun utilisateur trouvé
+          description: ''
+  /authentication/token/:
+    post:
+      operationId: authentication_token_create
+      description: |-
+        Takes a set of user credentials and returns an access and refresh JSON web
+        token pair to prove the authentication of those credentials.
+      tags:
+      - authentication
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenObtainPair'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TokenObtainPair'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TokenObtainPair'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenObtainPair'
+          description: ''
+  /authentication/token/refresh/:
+    post:
+      operationId: authentication_token_refresh_create
+      description: |-
+        Takes a refresh type JSON web token and returns an access type JSON web
+        token if the refresh token is valid.
+      tags:
+      - authentication
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenRefresh'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TokenRefresh'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TokenRefresh'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenRefresh'
+          description: ''
+  /authentication/users/:
+    get:
+      operationId: authentication_users_list
+      description: Liste tous les utilisateurs (réservé aux admins)
+      tags:
+      - authentication
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+          description: ''
+  /authentication/users/{user_id}/delete/:
+    delete:
+      operationId: authentication_users_delete_destroy
+      description: Suppression d'un utilisateur par un administrateur
+      parameters:
+      - in: path
+        name: user_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - authentication
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+        '400':
+          content:
+            application/json:
+              schema:
+                error: L'ID de l'utilisateur est requis
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                error: Impossible de supprimer un superutilisateur
+          description: ''
+  /authentication/users/{user_id}/update/:
+    patch:
+      operationId: authentication_users_update_partial_update
+      description: Modification d'un utilisateur par un administrateur uniquement
+      parameters:
+      - in: path
+        name: user_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - authentication
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedUser'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedUser'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedUser'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                error: L'ID de l'utilisateur est requis
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                error: Vous devez être administrateur pour modifier un utilisateur.
+          description: ''
+  /authentication/users/self-update/:
+    put:
+      operationId: authentication_users_self_update_update
+      description: Permet à un utilisateur de modifier son propre profil
+      tags:
+      - authentication
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/User'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/User'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/User'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                error: Vous ne pouvez modifier que votre propre compte.
+          description: ''
+    patch:
+      operationId: authentication_users_self_update_partial_update
+      description: Permet à un utilisateur de modifier son propre profil
+      tags:
+      - authentication
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedUser'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedUser'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedUser'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                error: Vous ne pouvez modifier que votre propre compte.
+          description: ''
+  /dashboard/:
+    get:
+      operationId: dashboard_retrieve
+      description: Vue du Dashboard (nécessite une authentification)
+      tags:
+      - dashboard
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Dashboard'
+          description: ''
+components:
+  schemas:
+    Dashboard:
+      type: object
+      properties:
+        message:
+          type: string
+      required:
+      - message
+    Home:
+      type: object
+      properties:
+        message:
+          type: string
+        user:
+          type: string
+      required:
+      - message
+      - user
+    Logout:
+      type: object
+      properties:
+        message:
+          type: string
+      required:
+      - message
+    PatchedUser:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        username:
+          type: string
+          description: Required. 150 characters or fewer. Letters, digits and @/./+/-/_
+            only.
+          pattern: ^[\w.@+-]+$
+          maxLength: 150
+        email:
+          type: string
+          format: email
+          maxLength: 254
+        password:
+          type: string
+          writeOnly: true
+          minLength: 8
+    ResetPassword:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+      required:
+      - email
+    ResetPasswordResponse:
+      type: object
+      properties:
+        message:
+          type: string
+        username:
+          type: string
+        new_password:
+          type: string
+      required:
+      - message
+      - username
+    TokenObtainPair:
+      type: object
+      properties:
+        username:
+          type: string
+          writeOnly: true
+        password:
+          type: string
+          writeOnly: true
+        access:
+          type: string
+          readOnly: true
+        refresh:
+          type: string
+          readOnly: true
+      required:
+      - access
+      - password
+      - refresh
+      - username
+    TokenRefresh:
+      type: object
+      properties:
+        access:
+          type: string
+          readOnly: true
+        refresh:
+          type: string
+      required:
+      - access
+      - refresh
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        username:
+          type: string
+          description: Required. 150 characters or fewer. Letters, digits and @/./+/-/_
+            only.
+          pattern: ^[\w.@+-]+$
+          maxLength: 150
+        email:
+          type: string
+          format: email
+          maxLength: 254
+        password:
+          type: string
+          writeOnly: true
+          minLength: 8
+      required:
+      - email
+      - id
+      - password
+      - username
+  securitySchemes:
+    jwtAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

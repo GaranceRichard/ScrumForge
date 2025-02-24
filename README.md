@@ -1,22 +1,17 @@
 # ScrumForge
-Le projet ScrumForge vise à proposer un espace pour chaque inscrit où il puisse travailler ses compétences sur les certifications Scrum.org et progressivement, à force de travail et d'exercice, se trouver en position de pouvoir les passer en toute sécurité.
+Le projet **ScrumForge** vise à proposer un espace où chaque inscrit peut travailler ses compétences sur les certifications Scrum.org et, grâce à un entraînement progressif, se préparer en toute confiance à passer ces certifications.
 
-# Backend
-## 📌 Authentication API
+---
 
-### 🚀 Présentation
-L'API **Authentication** est un service développé avec **Django Rest Framework (DRF)** qui gère l'authentification et la gestion des utilisateurs. Elle permet l'inscription, la connexion, la mise à jour et la suppression des utilisateurs avec un système sécurisé basé sur des tokens d'authentification.
+## 🏰 **Backend**
+### 📌 **Authentication API**
+L'API **Authentication** est un service développé avec **Django Rest Framework (DRF)** qui gère :
+- L'**authentification JWT**
+- La gestion des **utilisateurs**
+- L'**authentification sociale** (Google, LinkedIn)
+- L'administration sécurisée avec des **permissions avancées**
 
-### 🏗 Architecture de l'API
-L'API repose sur les composants suivants :
-
-- **Django Rest Framework (DRF)** : gestion des endpoints et des permissions.
-- **JWT (JSON Web Token)** : authentification sécurisée des utilisateurs.
-- **PostgreSQL / SQLite** : base de données utilisateur.
-- **Django User Model** : gestion des utilisateurs.
-- **Serializers** : conversion des objets en JSON.
-
-### 📁 Structure du projet
+### 💁 **Structure du projet**
 ```
 /authentication
 │── /migrations               # Migrations de la base de données
@@ -26,18 +21,20 @@ L'API repose sur les composants suivants :
 │── /urls.py                  # Routage des API endpoints
 │── /permissions.py           # Gestion des permissions
 │── /tests.py                 # Tests unitaires
-│── tokens.py                 # Gestion des tokens JWT
+│── /tokens.py                # Gestion des tokens JWT
+│── /social/                  # Gestion de l'authentification sociale (Google, LinkedIn)
 │── settings.py               # Configuration du projet
 │── wsgi.py / asgi.py         # Serveur d’application
 ```
 
-### 🛠 Endpoints de l'API
-Tous les endpoints sont accessibles via `/api/auth/`
+---
 
-#### 🔹 1. Inscription
+## 🛠 **Endpoints de l'API**
+Tous les endpoints sont accessibles via `/authentication/`
+
+### 🔹 **1. Inscription**
 - **Méthode** : `POST`
-- **URL** : `/api/auth/register/`
-- **Corps de la requête** :
+- **URL** : `/authentication/register/`
 ```json
 {
   "username": "john_doe",
@@ -55,13 +52,12 @@ Tous les endpoints sont accessibles via `/api/auth/`
 }
 ```
 
-#### 🔹 2. Connexion
+### 🔹 **2. Connexion (JWT)**
 - **Méthode** : `POST`
-- **URL** : `/api/auth/login/`
-- **Corps de la requête** :
+- **URL** : `/authentication/token/`
 ```json
 {
-  "email": "john@example.com",
+  "username": "john_doe",
   "password": "SecurePass123!"
 }
 ```
@@ -73,74 +69,75 @@ Tous les endpoints sont accessibles via `/api/auth/`
 }
 ```
 
-#### 🔹 3. Rafraîchir le Token JWT
+### 🔹 **3. Rafraîchir le Token JWT**
 - **Méthode** : `POST`
-- **URL** : `/api/auth/refresh/`
+- **URL** : `/authentication/token/refresh/`
 
-#### 🔹 4. Déconnexion
+### 🔹 **4. Déconnexion**
 - **Méthode** : `POST`
-- **URL** : `/api/auth/logout/`
+- **URL** : `/authentication/logout/`
+```json
+{
+  "refresh": "jwt_refresh_token"
+}
+```
 
-#### 🔹 5. Profil utilisateur
+### 🔹 **5. Profil utilisateur**
 - **Méthode** : `GET`
-- **URL** : `/api/auth/me/`
+- **URL** : `/authentication/users/me/`
 
-#### 🔹 6. Mise à jour du profil
-- **Méthode** : `PUT`
-- **URL** : `/api/auth/update/`
+### 🔹 **6. Mise à jour du profil (Utilisateur)**
+- **Méthode** : `PATCH`
+- **URL** : `/authentication/users/self-update/`
 
-#### 🔹 7. Suppression du compte
+### 🔹 **7. Mise à jour d'un utilisateur (Admin)**
+- **Méthode** : `PATCH`
+- **URL** : `/authentication/users/<user_id>/update/`
+
+### 🔹 **8. Suppression du compte (Admin)**
 - **Méthode** : `DELETE`
-- **URL** : `/api/auth/delete/`
+- **URL** : `/authentication/users/<user_id>/delete/`
 
-### 🔐 Sécurité
-- Utilisation de **JWT** pour l'authentification.
-- L’**access token** est utilisé pour accéder aux endpoints sécurisés.
-- Le **refresh token** permet de renouveler l’access token.
+---
 
-### 📦 Installation et exécution
-1. **Cloner le projet**
-```bash
-git clone https://github.com/votre-repo/auth-api.git
-cd auth-api
-```
+## 🔹 **9. Authentification sociale (Google, LinkedIn)**
+L'API prend en charge l'authentification sociale via **Google** et **LinkedIn** en OAuth2.
 
-2. **Créer un environnement virtuel et installer les dépendances**
-```bash
-python3 -m venv venv
-source venv/bin/activate  # Sur Windows : venv\Scripts\activate
-pip install -r requirements.txt
-```
+### **Connexion avec Google**
+- **Méthode** : `GET`
+- **URL** : `/auth/login/google/`
+- **Redirection** : L'utilisateur est redirigé vers la page de connexion Google.
 
-3. **Appliquer les migrations**
-```bash
-python manage.py migrate
-```
+### **Connexion avec LinkedIn**
+- **Méthode** : `GET`
+- **URL** : `/auth/login/linkedin/`
+- **Redirection** : L'utilisateur est redirigé vers la page de connexion LinkedIn.
 
-4. **Créer un super-utilisateur**
-```bash
-python manage.py createsuperuser
-```
+### **Redirection après connexion sociale**
+Une fois authentifié via Google ou LinkedIn, l'utilisateur est redirigé vers l'application avec un **token JWT**.
 
-5. **Lancer le serveur**
-```bash
-python manage.py runserver
-```
+---
 
-L'API sera accessible à `http://127.0.0.1:8000/api/auth/`.
+## 🔒 **Sécurité**
+- **JWT** : utilisé pour l'authentification.
+- **OAuth2** : pour l'authentification sociale (Google, LinkedIn).
+- **Rôles et permissions avancées** :
+  - **Utilisateur** : accès à ses propres informations.
+  - **Administrateur** : gestion des utilisateurs et des comptes.
 
-### 🛠 Technologies utilisées
+---
+
+## 🛠 **Technologies utilisées**
 - Python 3.x
 - Django & Django Rest Framework
 - PostgreSQL / SQLite
 - JWT pour l'authentification
-
-### 📌 À venir
-✅ Implémentation des rôles et permissions avancées  
-✅ Gestion des mots de passe oubliés  
-✅ Support OAuth (Google, GitHub, etc.)  
+- Social Auth (Google, LinkedIn)
+- DRF Spectacular (Documentation API)
 
 ---
-💡 **Auteur** : Garance Richard
-📧 Contact : garance.richard@gmail.com
-📅 Dernière mise à jour : Février 2025  
+
+📈 **Auteur** : Garance Richard  
+📧 **Contact** : garance.richard@gmail.com  
+🗓 **Dernière mise à jour** : Février 2025
+

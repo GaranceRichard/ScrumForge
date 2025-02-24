@@ -1,5 +1,5 @@
 from django.http import JsonResponse
-from django.urls import path
+from django.urls import path, include
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from .views import (
     LogoutView, RegisterView, ResetPasswordView, UserListView,
@@ -13,11 +13,12 @@ urlpatterns = [
     path('logout/', LogoutView.as_view(), name='logout'),  # Logout API
     path('register/', RegisterView.as_view(), name='register'),
     path('reset-password/', ResetPasswordView.as_view(), name='reset-password'),
+    path('auth/', include('social_django.urls', namespace='social')),  # Routes d'authentification 
 
     # 👥 Gestion des utilisateurs
     path('users/', UserListView.as_view(), name='user-list'),  # 🔹 Liste des utilisateurs (Admin)
-    path('users/update/', UserSelfUpdateView.as_view(), name='user-self-update'),  # 🔹 Mise à jour par l'utilisateur connecté
-    path('users/<int:user_id>/', UserUpdateView.as_view(), name='user-update'),  # 🔹 Mise à jour par un admin
+    path('users/self-update/', UserSelfUpdateView.as_view(), name='user-self-update'),  # 🔹 Mise à jour par l'utilisateur connecté
+    path('users/<int:user_id>/update/', UserUpdateView.as_view(), name='user-update'),  # 🔹 Mise à jour par un admin
     path('users/<int:user_id>/delete/', UserDeleteView.as_view(), name='user-delete'),  # 🔹 Suppression par un admin
 ]
 

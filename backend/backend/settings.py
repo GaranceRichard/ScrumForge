@@ -55,6 +55,9 @@ INSTALLED_APPS = [
     'authentication',  
     'certifications',
     'dashboard',
+    'drf_spectacular',
+    'drf_spectacular_sidecar',  # Pour les assets Swagger UI et Redoc
+    'social_django',  # Ajout de l'app pour l'authentification sociale
 ]
 
 
@@ -130,8 +133,15 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+AUTHENTICATION_BACKENDS = (
+    # 'social_core.backends.google.GoogleOAuth2',  # Google OAuth2
+    # 'social_core.backends.linkedin.LinkedinOAuth2',  # LinkedIn OAuth
+    'django.contrib.auth.backends.ModelBackend',  # Default auth backend
+)
+
 
 REST_FRAMEWORK = {
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
@@ -146,6 +156,12 @@ SIMPLE_JWT = {
     'SIGNING_KEY': SECRET_KEY,
 }
 
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'ScrumForge API',
+    'DESCRIPTION': 'Documentation des endpoints de l\'API ScrumForge',
+    'VERSION': '1.0.0',
+    'SERVE_INCLUDE_SCHEMA': False,
+}
 
 # Internationalization
 # https://docs.djangoproject.com/en/5.1/topics/i18n/
@@ -177,3 +193,11 @@ AUTH_USER_MODEL = 'authentication.CustomUser'
 
 if DEBUG:
     EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+
+# Google OAuth2 keys
+SOCIAL_AUTH_GOOGLE_OAUTH2_KEY = 'your-google-client-id'
+SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET = 'your-google-client-secret'
+
+# LinkedIn OAuth keys
+SOCIAL_AUTH_LINKEDIN_OAUTH2_KEY = 'your-linkedin-client-id'
+SOCIAL_AUTH_LINKEDIN_OAUTH2_SECRET = 'your-linkedin-client-secret'

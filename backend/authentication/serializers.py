@@ -3,7 +3,26 @@ from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.contrib.auth.password_validation import validate_password  # 🔹 Import du validateur Django
 
+
 User = get_user_model()
+
+class HomeSerializer(serializers.Serializer):
+    message = serializers.CharField()
+    user = serializers.CharField()
+
+class LogoutSerializer(serializers.Serializer):
+    message = serializers.CharField()
+
+class ResetPasswordSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+
+class ResetPasswordResponseSerializer(serializers.Serializer):
+    message = serializers.CharField()
+    username = serializers.CharField()
+    new_password = serializers.CharField(required=False)  # Seulement si DEBUG=True
+
+class DashboardSerializer(serializers.Serializer):
+    message = serializers.CharField()
 
 class UserSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, required=True, min_length=8)  # 🔹 Assure un min de 8 caractères
