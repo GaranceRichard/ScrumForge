@@ -302,6 +302,315 @@ paths:
               schema:
                 error: Vous ne pouvez modifier que votre propre compte.
           description: ''
+  /certifications/:
+    get:
+      operationId: certifications_list
+      tags:
+      - certifications
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Certification'
+          description: ''
+    post:
+      operationId: certifications_create
+      tags:
+      - certifications
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Certification'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Certification'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Certification'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Certification'
+          description: ''
+  /certifications/{certification_id}/competencies/:
+    put:
+      operationId: certifications_competencies_update
+      parameters:
+      - in: path
+        name: certification_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - certifications
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CertificationCompetencyUpdate'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CertificationCompetencyUpdate'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CertificationCompetencyUpdate'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+          description: ''
+  /certifications/{id}/:
+    get:
+      operationId: certifications_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - certifications
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Certification'
+          description: ''
+    put:
+      operationId: certifications_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - certifications
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Certification'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Certification'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Certification'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Certification'
+          description: ''
+    patch:
+      operationId: certifications_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - certifications
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedCertification'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedCertification'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedCertification'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Certification'
+          description: ''
+    delete:
+      operationId: certifications_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - certifications
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /certifications/competencies/:
+    get:
+      operationId: certifications_competencies_list
+      tags:
+      - certifications
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Competency'
+          description: ''
+    post:
+      operationId: certifications_competencies_create
+      tags:
+      - certifications
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Competency'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Competency'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Competency'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Competency'
+          description: ''
+  /certifications/competencies/{id}/:
+    get:
+      operationId: certifications_competencies_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - certifications
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Competency'
+          description: ''
+    put:
+      operationId: competency_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - certifications
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Competency'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Competency'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Competency'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Competency'
+          description: ''
+    patch:
+      operationId: competency_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - certifications
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedCompetency'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedCompetency'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedCompetency'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Competency'
+          description: ''
+    delete:
+      operationId: certifications_competencies_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - certifications
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
   /dashboard/:
     get:
       operationId: dashboard_retrieve
@@ -319,6 +628,55 @@ paths:
           description: ''
 components:
   schemas:
+    Certification:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 255
+        description:
+          type: string
+          nullable: true
+        logo:
+          type: string
+          format: uri
+          nullable: true
+        competencies:
+          type: array
+          items: {}
+          readOnly: true
+      required:
+      - competencies
+      - id
+      - name
+    CertificationCompetencyUpdate:
+      type: object
+      properties:
+        competency_ids:
+          type: array
+          items:
+            type: integer
+          description: Liste des IDs des compétences à associer
+      required:
+      - competency_ids
+    Competency:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 255
+        description:
+          type: string
+          nullable: true
+      required:
+      - id
+      - name
     Dashboard:
       type: object
       properties:
@@ -343,6 +701,38 @@ components:
           type: string
       required:
       - message
+    PatchedCertification:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 255
+        description:
+          type: string
+          nullable: true
+        logo:
+          type: string
+          format: uri
+          nullable: true
+        competencies:
+          type: array
+          items: {}
+          readOnly: true
+    PatchedCompetency:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 255
+        description:
+          type: string
+          nullable: true
     PatchedUser:
       type: object
       properties:

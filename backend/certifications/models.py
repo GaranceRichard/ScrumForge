@@ -3,12 +3,16 @@ from django.contrib.auth import get_user_model
 
 User = get_user_model()
 
+from django.db import models
+
 class Certification(models.Model):
     name = models.CharField(max_length=255, unique=True)
     description = models.TextField(blank=True, null=True)
+    logo = models.ImageField(upload_to='certification_logos/', null=True, blank=True)  # Nouveau champ logo
     
     def __str__(self):
         return self.name
+
 
 class Competency(models.Model):
     name = models.CharField(max_length=255, unique=True)
