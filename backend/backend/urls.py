@@ -7,6 +7,7 @@ urlpatterns = [
     path('', home_api, name='home_api'),  # API qui remplace l'ancienne vue inutile
     path('admin/', admin.site.urls),
     path('authentication/', include('authentication.urls')),
+    path('user-management/', include('user_management.urls')),
     path('certifications/', include('certifications.urls')),
     path('dashboard/', include('dashboard.urls')),
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),

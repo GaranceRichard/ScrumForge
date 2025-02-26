@@ -42,4 +42,5 @@ Thumbs.db
 backend/seed.py
 backend/.env
 db.sqlite3
+backend/certification_logos/*.jpg
 

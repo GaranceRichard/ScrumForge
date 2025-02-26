@@ -1,15 +1,15 @@
-from authentication.serializers import UserSerializer, HomeSerializer, LogoutSerializer, ResetPasswordSerializer, ResetPasswordResponseSerializer
+from authentication.serializers import HomeSerializer, LogoutSerializer, ResetPasswordSerializer, ResetPasswordResponseSerializer
 from django.conf import settings
 from django.contrib.auth import get_user_model, login
 from django.core.mail import send_mail
 from django.utils.crypto import get_random_string
-from rest_framework import generics, status
+from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import IsAuthenticated, AllowAny, IsAdminUser
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
-from django.shortcuts import get_object_or_404, redirect
+from django.shortcuts import redirect
 from drf_spectacular.utils import extend_schema
 
 
@@ -48,14 +48,6 @@ class LogoutView(APIView):
             return Response({"message": "Déconnexion réussie."}, status=status.HTTP_205_RESET_CONTENT)
         except Exception:
             return Response({"error": "Token invalide ou déjà expiré."}, status=status.HTTP_400_BAD_REQUEST)
-
-
-class RegisterView(generics.CreateAPIView):
-    """Inscription d'un nouvel utilisateur"""
-
-    queryset = User.objects.all()
-    serializer_class = UserSerializer
-    permission_classes = [AllowAny]
 
 @extend_schema(
     request=ResetPasswordSerializer,
@@ -96,84 +88,6 @@ class ResetPasswordView(APIView):
             response_data["new_password"] = new_password
 
         return Response(response_data, status=status.HTTP_200_OK)
-
-# ==========================
-# 👥 User Management APIs
-# ==========================
-class UserListView(generics.ListAPIView):
-    """Liste tous les utilisateurs (réservé aux admins)"""
-
-    queryset = User.objects.all()
-    serializer_class = UserSerializer
-    permission_classes = [IsAdminUser]
-
-@extend_schema(
-    request=UserSerializer,
-    responses={
-        200: UserSerializer,
-        400: {"error": "L'ID de l'utilisateur est requis"},
-        403: {"error": "Vous devez être administrateur pour modifier un utilisateur."}
-    }
-)
-class UserUpdateView(APIView):
-    """Modification d'un utilisateur par un administrateur uniquement"""
-
-    permission_classes = [IsAdminUser]  # ✅ Seuls les admins peuvent modifier les utilisateurs
-
-    def patch(self, request, user_id=None):
-        if not user_id:
-            return Response({"error": "L'ID de l'utilisateur est requis."}, status=status.HTTP_400_BAD_REQUEST)
-
-        # 🔥 Vérification stricte : seuls les admins peuvent modifier un utilisateur
-        if not request.user.is_staff:
-            return Response(
-                {"error": "Accès interdit. Seuls les administrateurs peuvent modifier un utilisateur."},
-                status=status.HTTP_403_FORBIDDEN
-            )
-
-        user = get_object_or_404(User, id=user_id)
-        serializer = UserSerializer(user, data=request.data, partial=True)
-
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_200_OK)
-
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-@extend_schema(
-    request=UserSerializer,
-    responses={
-        200: UserSerializer,
-        403: {"error": "Vous ne pouvez modifier que votre propre compte."}
-    }
-)
-class UserSelfUpdateView(generics.UpdateAPIView):
-    """Permet à un utilisateur de modifier son propre profil"""
-
-    serializer_class = UserSerializer
-    permission_classes = [IsAuthenticated]
-
-    def get_object(self):
-        return self.request.user
-
-@extend_schema(responses={204: None, 400: {"error": "L'ID de l'utilisateur est requis"}, 403: {"error": "Impossible de supprimer un superutilisateur"}})
-class UserDeleteView(APIView):
-    """Suppression d'un utilisateur par un administrateur"""
-
-    permission_classes = [IsAdminUser]
-
-    def delete(self, request, user_id=None):
-        if not user_id:
-            return Response({"error": "L'ID de l'utilisateur est requis."}, status=status.HTTP_400_BAD_REQUEST)
-
-        user = get_object_or_404(User, id=user_id)
-
-        if user.is_superuser:
-            return Response({"error": "Impossible de supprimer un superutilisateur."}, status=status.HTTP_403_FORBIDDEN)
-
-        user.delete()
-        return Response({"message": "Utilisateur supprimé avec succès."}, status=status.HTTP_204_NO_CONTENT)
-
 
 def social_auth_redirect(request):
     # Logique après l'authentification réussie

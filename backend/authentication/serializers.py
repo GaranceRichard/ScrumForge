@@ -24,9 +24,6 @@ class ResetPasswordResponseSerializer(serializers.Serializer):
 class DashboardSerializer(serializers.Serializer):
     message = serializers.CharField()
 
-class UserSerializer(serializers.ModelSerializer):
-    password = serializers.CharField(write_only=True, required=True, min_length=8)  # 🔹 Assure un min de 8 caractères
-
     class Meta:
         model = User
         fields = ['id', 'username', 'email', 'password']
