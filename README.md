@@ -1,24 +1,72 @@
-# ScrumForge
+# ScrumForge – Plateforme de préparation aux certifications Scrum.org
 
 Le projet **ScrumForge** offre un espace où chaque inscrit peut travailler ses compétences pour réussir les certifications Scrum.org. Grâce à un entraînement progressif, les utilisateurs se préparent en toute confiance à passer ces certifications.
+C'est un projet fullstack conçu par **Garance Richard**, Delivery Manager / Coach Agile, pour entraîner les utilisateurs aux certifications agiles Scrum.org via une approche par compétences, référentiels et rôles.
 
 ---
 
-## Architecture du Projet
+## 🎯 Objectif
+
+ScrumForge vise à offrir une **expérience d’apprentissage ciblée** et mesurable pour les certifications Scrum (PSM, PSPO, PSU, PAL, etc.) :
+
+- Alignement sur les **compétences évaluées par Scrum.org**
+- Architecture sécurisée, **scalable et modulaire**
+- Utilisation de **standards techniques robustes** (JWT, DRF, React, PostgreSQL)
+
+---
+
+## ⚙️ Stack Technique
+
+| Couche         | Technologies                                  |
+|----------------|-----------------------------------------------|
+| Frontend       | React + TailwindCSS                           |
+| Backend        | Django 5 + Django Rest Framework              |
+| Authentification | JWT (rotation, refresh), OAuth2             |
+| Base de données| SQLite (dev), PostgreSQL (production-ready)   |
+| Documentation API | OpenAPI 3 – Swagger + ReDoc                |
+
+---
+
+## 🚧 Roadmap produit
+
+- [ ] Mise en place CI/CD (GitHub Actions)
+- [ ] Intégration scoring utilisateur & indicateurs (cycle time, taux de bonnes réponses)
+- [ ] Version SaaS déployée sur Railway / Render
+- [ ] Ajout d’une interface admin analytics
+
+---
+
+# ScrumForge
+
+
+---
+
+## Architecture modulaire du Projet
 
 Le projet est composé de plusieurs applications Django, chacune responsable d'un domaine fonctionnel spécifique :
 
 - **Authentication**  
   Gère l'authentification via JWT, la réinitialisation de mot de passe et l'authentification sociale (Google, LinkedIn). Cette application se concentre exclusivement sur la gestion des sessions et des tokens.
+  - JWT sécurisé avec refresh token, rotation, blacklist
+  - Endpoints de login / logout / reset password
+  - Backend extensible avec support futur OAuth2 (Google, LinkedIn)
 
 - **User Management**  
   Est dédiée au CRUD complet des utilisateurs : inscription, consultation, mise à jour et suppression des comptes. Cette application offre des endpoints distincts pour les utilisateurs eux-mêmes et pour les administrateurs.
+  - Modèle `CustomUser` (admin / user)
+  - Création, mise à jour, suppression de comptes
+  - Séparation des droits + endpoints protégés
 
 - **Certifications & Compétences**  
   Fournit des endpoints pour créer, lister, afficher, mettre à jour et supprimer des certifications, ainsi que pour gérer les compétences associées à chaque certification.
+  - Référentiels modélisés : PSM, PSPO, PSU, PAL, SPS, PSK…
+  - Chaque certification est liée à un set de compétences (4–5 par référentiel)
+  - Préparation ciblée par objectif de progression
 
 - **Dashboard** (optionnel)  
   Offre une vue d'ensemble destinée aux utilisateurs authentifiés.
+  - (À venir) Visualisation des progrès
+  - Objectif : offrir un feedback adaptatif sur les performances
 
 ---
 
